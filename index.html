@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GTA-RP Screenshot Buddy</title>
+<title>GTA Log Creator V56 (Fixed Download)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -181,7 +181,7 @@
 
   <div class="sidebar">
     <div class="sidebar-header">
-      <h1 class="brand-title">GTA-RP Screenshot Buddy</h1>
+      <h1 class="brand-title">GTA LOG V56</h1>
       <div class="lang-switch">
         <button class="lang-btn" id="langTH">TH</button>
         <button class="lang-btn active" id="langEN">EN</button>
@@ -702,8 +702,42 @@
               self.draw(); 
           } 
       });
-      document.getElementById('btnDlPng').addEventListener('click', () => self.isDownloading = true || self.draw() || self.canvas.toBlob(b => { saveAs(b, `Scene-${self.currentSceneIndex+1}.png`); self.isDownloading = false; self.draw(); }));
-      document.getElementById('downloadBtn').addEventListener('click', async () => { /* ZIP Logic Omitted for brevity */ });
+
+      // --- FIXED DOWNLOAD LOGIC ---
+      document.getElementById('btnDlPng').addEventListener('click', () => {
+          self.isDownloading = true;
+          self.draw(); // Clear UI
+          self.canvas.toBlob((blob) => {
+              if(blob) saveAs(blob, `GTA-Log-${self.currentSceneIndex+1}.png`);
+              self.isDownloading = false;
+              self.draw(); // Restore UI
+          });
+      });
+
+      document.getElementById('downloadBtn').addEventListener('click', async () => {
+          const zip = new JSZip();
+          const originalIndex = self.currentSceneIndex;
+          self.isDownloading = true;
+          
+          for (let i = 0; i < self.scenes.length; i++) {
+              self.currentSceneIndex = i;
+              self.draw();
+              await new Promise(resolve => {
+                  self.canvas.toBlob(blob => {
+                      zip.file(`Scene-${i+1}.png`, blob);
+                      resolve();
+                  });
+              });
+          }
+          self.currentSceneIndex = originalIndex;
+          self.isDownloading = false;
+          self.draw();
+          
+          zip.generateAsync({type:"blob"}).then(content => {
+             saveAs(content, "GTA-Stories.zip");
+          });
+      });
+      // ----------------------------
       
       this.els.text.addEventListener('input', (e) => { self.scenes[self.currentSceneIndex].blocks[self.scenes[self.currentSceneIndex].activeBlockIndex].text = e.target.value; self.draw(); });
       this.els.size.addEventListener('input', (e) => { self.scenes[self.currentSceneIndex].fontSize = e.target.value; self.draw(); });
@@ -842,30 +876,24 @@
                    const bounds = self.dragTarget.bounds || 
                                   { x: self.dragTarget.x, y: self.dragTarget.y, w: self.dragTarget.w, h: self.dragTarget.h };
 
-                   // Calculate Offset (Because text blocks have padding)
                    const offsetX = self.dragTarget.x - bounds.x;
                    const offsetY = self.dragTarget.y - bounds.y;
 
-                   // Calculate Target Position for the BOUNDING BOX
                    let targetBoundX = mouse.x - self.dragOffset.x - offsetX;
                    let targetBoundY = mouse.y - self.dragOffset.y - offsetY;
 
-                   // 1. Min Constraint (Left/Top)
                    if (targetBoundX < 0) targetBoundX = 0;
                    if (targetBoundY < 0) targetBoundY = 0;
 
-                   // 2. Max Constraint (Right/Bottom)
                    let maxX = self.canvas.width - bounds.w;
                    let maxY = self.canvas.height - bounds.h;
                    
-                   // Handle large objects: If object is bigger than canvas, prioritize Top/Left alignment (0)
                    if (maxX < 0) maxX = 0;
                    if (maxY < 0) maxY = 0;
 
                    if (targetBoundX > maxX) targetBoundX = maxX;
                    if (targetBoundY > maxY) targetBoundY = maxY;
 
-                   // Apply back to internal coords
                    self.dragTarget.x = targetBoundX + offsetX;
                    self.dragTarget.y = targetBoundY + offsetY;
                }
