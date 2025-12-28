@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GTA-RP Screenshot Buddy (Overlay System)</title>
+<title>GTA-RP Screenshot Buddy (Zoom Fixed)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -514,11 +514,9 @@
           this.ctx.drawImage(ov.img, ov.x, ov.y, ov.w, ov.h);
           this.ctx.restore();
           
-          // Draw selection border if active and not downloading
           if (!this.isDownloading && idx === sc.activeOverlayIndex && this.mode === 'move') {
               this.ctx.strokeStyle = '#f1c40f'; this.ctx.lineWidth = 2;
               this.ctx.strokeRect(ov.x, ov.y, ov.w, ov.h);
-              // Small handle
               this.ctx.fillStyle = '#f1c40f';
               this.ctx.fillRect(ov.x + ov.w - 5, ov.y + ov.h - 5, 10, 10);
           }
@@ -543,7 +541,6 @@
               }
           }
           if (this.mode === 'censor') {
-             // ... Censor UI (Red dashed box) ...
              if (this.hoveredCensorIndex !== -1 && sc.censoredAreas[this.hoveredCensorIndex]) {
                   const area = sc.censoredAreas[this.hoveredCensorIndex];
                   this.ctx.strokeStyle = "#c0392b"; this.ctx.lineWidth = 2;
@@ -664,7 +661,19 @@
 
     setupDOMEvents: function() {
       const self = this;
-      // ... (Existing Event Listeners) ...
+      
+      // FIXED: Mouse Wheel Zoom Logic
+      this.canvas.addEventListener('wheel', (e) => {
+          const sc = self.scenes[self.currentSceneIndex];
+          if (self.mode === 'move' && sc.imgLoaded) {
+             e.preventDefault();
+             const zoomIntensity = 0.1;
+             const delta = e.deltaY < 0 ? 1 + zoomIntensity : 1 - zoomIntensity;
+             sc.imgScale = Math.min(Math.max(0.1, sc.imgScale * delta), 10);
+             self.draw();
+          }
+      });
+
       document.getElementById('addSceneBtn').addEventListener('click', () => self.addNewScene());
       document.getElementById('langTH').addEventListener('click', () => self.setLang('th'));
       document.getElementById('langEN').addEventListener('click', () => self.setLang('en'));
@@ -676,7 +685,15 @@
       document.getElementById('modeCensor').addEventListener('click', () => { self.mode = 'censor'; self.els.modeBtns.move.classList.remove('active'); self.els.modeBtns.censor.classList.add('active-censor'); self.els.censorTools.style.display = 'flex'; self.draw(); });
       document.getElementById('btnUndo').addEventListener('click', () => { const sc = self.scenes[self.currentSceneIndex]; sc.censoredAreas.pop(); self.draw(); });
       document.getElementById('btnClearCensor').addEventListener('click', () => { const sc = self.scenes[self.currentSceneIndex]; sc.censoredAreas = []; self.draw(); });
-      document.getElementById('btnCenter').addEventListener('click', () => { /* Reset BG */ const sc = self.scenes[self.currentSceneIndex]; if (sc.imgLoaded) { sc.imgScale = Math.min(self.canvas.width/sc.img.width, self.canvas.height/sc.img.height); sc.imgX = (self.canvas.width - sc.img.width*sc.imgScale)/2; sc.imgY = (self.canvas.height - sc.img.height*sc.imgScale)/2; self.draw(); } });
+      document.getElementById('btnCenter').addEventListener('click', () => { 
+          const sc = self.scenes[self.currentSceneIndex]; 
+          if (sc.imgLoaded) { 
+              sc.imgScale = Math.min(self.canvas.width/sc.img.width, self.canvas.height/sc.img.height); 
+              sc.imgX = (self.canvas.width - sc.img.width*sc.imgScale)/2; 
+              sc.imgY = (self.canvas.height - sc.img.height*sc.imgScale)/2; 
+              self.draw(); 
+          } 
+      });
       document.getElementById('btnDlPng').addEventListener('click', () => self.isDownloading = true || self.draw() || self.canvas.toBlob(b => { saveAs(b, `Scene-${self.currentSceneIndex+1}.png`); self.isDownloading = false; self.draw(); }));
       document.getElementById('downloadBtn').addEventListener('click', async () => { /* ZIP Logic Same as V51 */ });
       
@@ -733,19 +750,16 @@
       });
       this.els.btnDelOverlay.addEventListener('click', () => self.deleteActiveOverlay());
 
-      // Mouse Logic (Updated for Overlays)
+      // Mouse Logic
       this.canvas.addEventListener('mousedown', (e) => {
           const mouse = self.getMousePos(e);
           const sc = self.scenes[self.currentSceneIndex];
           if (self.mode === 'censor') {
              if (e.button === 0) { self.isCensoring = true; self.censorStart = mouse; self.censorCurrent = mouse; }
-             if (e.button === 2) { /* R-Click Logic in contextmenu */ }
           } else {
-             // Move Mode Logic
              if (e.button === 0) {
                 self.isDragging = true; self.dragStart = mouse;
                 
-                // 1. Check Text Blocks
                 let hitBlock = null;
                 for (let i = sc.blocks.length - 1; i >= 0; i--) {
                     const b = sc.blocks[i];
@@ -754,7 +768,6 @@
                     }
                 }
                 
-                // 2. Check Overlays (If no text hit)
                 let hitOverlayIndex = -1;
                 if (!hitBlock) {
                     for (let i = sc.overlays.length - 1; i >= 0; i--) {
@@ -773,7 +786,6 @@
                    self.dragTarget = sc.overlays[hitOverlayIndex];
                    self.dragOffset = { x: mouse.x - self.dragTarget.x, y: mouse.y - self.dragTarget.y };
                 } else {
-                   // Clicked background -> Deselect overlay
                    sc.activeOverlayIndex = -1; self.updateOverlayUI();
                    self.dragTarget = 'image';
                 }
@@ -801,7 +813,6 @@
          if (self.mode === 'censor') {
             if (self.isCensoring) { self.censorCurrent = mouse; self.draw(); }
             else {
-               // Hover Logic Censor
                let found = -1;
                for (let i = sc.censoredAreas.length - 1; i >= 0; i--) {
                    const a = sc.censoredAreas[i]; const rx = a.w < 0 ? a.x+a.w : a.x; const ry = a.h < 0 ? a.y+a.h : a.y;
@@ -810,7 +821,6 @@
                if (found !== self.hoveredCensorIndex) { self.hoveredCensorIndex = found; self.draw(); }
             }
          } else {
-            // Drag Logic
             if (self.isDragging) {
                if (self.dragTarget === 'image') {
                    sc.imgX += mouse.x - self.dragStart.x; sc.imgY += mouse.y - self.dragStart.y; self.dragStart = mouse;
