@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GTA Log Creator V43 (Luxury Sidebar)</title>
+<title>GTA Log Creator V50 (Delete Solved)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-  /* --- Luxury Variables --- */
+  /* --- Variables --- */
   :root {
     --bg-main: #050505;
     --bg-sidebar: #0f0f0f;
     --border-color: #222;
-    --accent: #c5a059; /* Luxury Gold */
+    --accent: #c5a059;
     --accent-dim: #8a703d;
     --text-main: #eaeaea;
     --text-muted: #888;
@@ -22,7 +22,6 @@
     --radius: 8px;
   }
 
-  /* --- Global Reset --- */
   body { 
     font-family: 'Inter', sans-serif; 
     background: var(--bg-main); 
@@ -33,148 +32,99 @@
     overflow: hidden; 
   }
 
-  /* --- Layout Grid --- */
-  .app-layout {
-    display: flex;
-    width: 100%;
-    height: 100%;
-  }
+  .app-layout { display: flex; width: 100%; height: 100%; }
 
-  /* --- Left: Canvas Stage --- */
+  /* --- Stage --- */
   .stage-area {
-    flex: 1;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    flex: 1; position: relative; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
     background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
     overflow: hidden;
   }
-
   .canvas-wrapper {
-    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-    border: 1px solid #222;
-    line-height: 0;
-    max-width: 90%;
-    max-height: 85vh;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8); border: 1px solid #222;
+    line-height: 0; max-width: 90%; max-height: 85vh;
   }
-  
   canvas { display: block; background: #000; max-width: 100%; height: auto; }
 
-  /* Scene Bar (Floating at bottom) */
+  /* Scene Bar */
   .scene-bar-wrapper {
-    position: absolute;
-    bottom: 20px;
-    background: rgba(15, 15, 15, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.05);
-    padding: 10px 20px;
-    border-radius: 50px;
-    display: flex;
-    gap: 10px;
-    max-width: 90%;
-    overflow-x: auto;
-    scrollbar-width: none; /* Hide scrollbar */
+    position: absolute; bottom: 20px;
+    background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 50px;
+    display: flex; gap: 10px; max-width: 90%; overflow-x: auto; scrollbar-width: none;
   }
-
   .scene-btn {
-    background: transparent;
-    color: var(--text-muted);
-    border: 1px solid transparent;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: 0.3s;
-    white-space: nowrap;
-    display: flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--text-muted); border: 1px solid transparent;
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    transition: 0.3s; white-space: nowrap; display: flex; align-items: center; gap: 8px;
+    user-select: none;
   }
   .scene-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
   .scene-btn.active { 
-    background: var(--accent); 
-    color: #000; 
-    font-weight: 600; 
+    background: var(--accent); color: #000; font-weight: 600; 
     box-shadow: 0 0 15px rgba(197, 160, 89, 0.3);
   }
-  .scene-close { font-size: 14px; opacity: 0.5; transition: 0.2s; }
-  .scene-close:hover { opacity: 1; color: #a00; }
-
-  .scene-add-btn {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: #222; border: none; color: #fff;
-    cursor: pointer; transition: 0.2s;
+  
+  /* Scene Close Button */
+  .scene-close {
+    font-size: 14px; width: 18px; height: 18px; 
     display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; transition: 0.2s; color: #555; font-weight: bold;
+    background: rgba(0,0,0,0.1); margin-left: 5px;
+  }
+  .scene-close:hover { background: #e74c3c; color: #fff; transform: scale(1.1); }
+  
+  .scene-add-btn {
+    width: 30px; height: 30px; border-radius: 50%; background: #222; border: none; color: #fff;
+    cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;
   }
   .scene-add-btn:hover { background: var(--accent); color: #000; }
 
-  /* --- Right: Sidebar Controls --- */
+  /* --- Sidebar --- */
   .sidebar {
-    width: 360px;
-    background: var(--bg-sidebar);
-    border-left: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #333 #111;
+    width: 360px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color);
+    display: flex; flex-direction: column; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: #333 #111;
   }
-
   .sidebar-header {
-    padding: 20px 25px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 20px 25px; border-bottom: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center;
   }
   .brand-title { 
-    margin: 0; font-size: 18px; font-weight: 600; letter-spacing: 0.5px;
-    background: linear-gradient(45deg, #fff, #888);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin: 0; font-size: 16px; font-weight: 600; letter-spacing: 0.5px;
+    background: linear-gradient(45deg, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
-  .brand-ver { font-size: 10px; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+  .lang-switch { display: flex; background: #1a1a1a; border-radius: 4px; padding: 2px; }
+  .lang-btn {
+    background: transparent; border: none; color: #555; font-size: 10px; font-weight: bold;
+    padding: 4px 8px; cursor: pointer; border-radius: 4px; transition: 0.2s;
+  }
+  .lang-btn.active { background: var(--accent); color: #000; }
 
-  .control-group {
-    padding: 20px 25px;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-  }
+  .control-group { padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.03); }
   .group-title {
     font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
     color: var(--text-muted); margin-bottom: 15px; font-weight: 600;
   }
 
-  /* Inputs & Form Elements */
   label { display: block; font-size: 12px; color: #aaa; margin-bottom: 6px; }
-  
-  input[type="text"], input[type="number"], textarea, select {
-    width: 100%;
-    background: var(--input-bg);
-    border: 1px solid transparent;
-    color: #fff;
-    padding: 10px 12px;
-    border-radius: var(--radius);
-    font-family: inherit; font-size: 13px;
-    box-sizing: border-box;
-    transition: 0.2s;
+  input[type="text"], input[type="number"], textarea {
+    width: 100%; background: var(--input-bg); border: 1px solid transparent; color: #fff;
+    padding: 10px 12px; border-radius: var(--radius); font-family: inherit; font-size: 13px;
+    box-sizing: border-box; transition: 0.2s;
   }
-  input:focus, textarea:focus {
-    outline: none;
-    border-color: var(--accent-dim);
-    background: #1a1a1a;
-  }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent-dim); background: #1a1a1a; }
   textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
-
   input[type="range"] {
-    width: 100%; height: 4px; background: #333; border-radius: 2px;
-    outline: none; -webkit-appearance: none; margin: 10px 0;
+    width: 100%; height: 4px; background: #333; border-radius: 2px; outline: none; -webkit-appearance: none; margin: 10px 0;
   }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent);
     border-radius: 50%; cursor: pointer; transition: 0.2s;
   }
-  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
-  /* Mode Switcher */
-  .mode-switcher {
-    display: flex; background: #1a1a1a; padding: 4px; border-radius: 8px; margin-bottom: 15px;
-  }
+  .mode-switcher { display: flex; background: #1a1a1a; padding: 4px; border-radius: 8px; margin-bottom: 15px; }
   .mode-btn {
     flex: 1; border: none; background: transparent; color: #666;
     padding: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: 0.3s;
@@ -182,7 +132,6 @@
   .mode-btn.active { background: #2a2a2a; color: #fff; }
   .mode-btn.active-censor { background: var(--accent); color: #000; }
 
-  /* Buttons */
   .btn-primary {
     width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent-dim));
     color: #000; border: none; padding: 12px; border-radius: var(--radius);
@@ -203,185 +152,193 @@
     flex: 1; background: #222; border: none; color: #ccc; padding: 6px; border-radius: 4px; font-size: 14px; cursor: pointer;
   }
   .btn-icon:hover { background: #333; color: #fff; }
-  .btn-danger { color: #e74c3c; } .btn-danger:hover { background: rgba(231, 76, 60, 0.1); }
+  .btn-danger { color: #e74c3c; }
 
-  /* Grid for side-by-side inputs */
-  .row { display: flex; gap: 10px; align-items: center; }
-  .col { flex: 1; }
-
-  /* Custom Checkbox */
+  .row { display: flex; gap: 10px; align-items: center; } .col { flex: 1; }
   .checkbox-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-  .checkbox-wrapper label { margin: 0; cursor: pointer; user-select: none; }
+  .checkbox-wrapper label { margin: 0; cursor: pointer; user-select: none; font-size: 12px; }
   input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
 
-  /* Status Helpers */
-  .helper-status {
-    font-size: 10px; color: #555; text-align: center; margin-top: 20px;
-  }
-
-  /* File Upload */
-  .file-upload-styled {
-    position: relative; overflow: hidden; display: inline-block; width: 100%;
-  }
-  .file-upload-styled input[type=file] {
-    font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer;
-  }
+  .file-upload-styled { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+  .file-upload-styled input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
   .file-btn-fake {
     background: #1a1a1a; border: 1px dashed #444; color: #888; padding: 12px;
     text-align: center; border-radius: var(--radius); font-size: 12px; transition: 0.2s;
   }
   .file-upload-styled:hover .file-btn-fake { border-color: var(--accent); color: var(--accent); }
 
+  /* Helper text - Faded and small */
+  .helper-status {
+      font-size: 10px; 
+      color: #444; /* Darker gray to be less prominent */
+      text-align: center;
+      margin-top: 15px;
+      opacity: 0.4; /* Faded */
+      pointer-events: none;
+      transition: 0.3s;
+  }
+  .helper-status:hover { opacity: 0.8; }
 </style>
 </head>
 <body>
 
 <div class="app-layout">
-  
   <div class="stage-area">
     <div class="canvas-wrapper">
       <canvas id="canvas" width="800" height="600"></canvas>
     </div>
-
     <div class="scene-bar-wrapper">
       <div id="sceneContainer" style="display:flex; gap:10px;"></div>
-      <button class="scene-add-btn" onclick="app.addNewScene()" title="New Scene">+</button>
+      <button class="scene-add-btn" id="addSceneBtn" title="New Scene">+</button>
     </div>
   </div>
 
   <div class="sidebar">
     <div class="sidebar-header">
-      <h1 class="brand-title">GTA LOG CREATOR <span class="brand-ver">V43</span></h1>
+      <h1 class="brand-title">GTA LOG CREATOR V50</h1>
+      <div class="lang-switch">
+        <button class="lang-btn" id="langTH">TH</button>
+        <button class="lang-btn active" id="langEN">EN</button>
+      </div>
     </div>
 
     <div class="control-group">
-      <div class="group-title">Text Editor</div>
-      
+      <div class="group-title" data-t="txt_title">Text Editor</div>
       <div class="row" style="margin-bottom:8px; justify-content:space-between;">
          <span style="font-size:11px; color:var(--accent);" id="activeBlockLabel">Block #1</span>
          <div class="btn-icon-group" style="margin:0; width:auto;">
-           <button class="btn-icon" onclick="app.cycleBlock(-1)">◀</button>
-           <button class="btn-icon" onclick="app.cycleBlock(1)">▶</button>
-           <button class="btn-icon" onclick="app.addTextBlock()" style="color:var(--accent);">+</button>
-           <button class="btn-icon btn-danger" onclick="app.deleteTextBlock()">×</button>
+           <button class="btn-icon" id="btnPrevBlock">◀</button>
+           <button class="btn-icon" id="btnNextBlock">▶</button>
+           <button class="btn-icon" id="btnAddBlock" style="color:var(--accent);">+</button>
+           <button class="btn-icon btn-danger" id="btnDelBlock">×</button>
          </div>
       </div>
-      
-      <textarea id="textInput" placeholder="Enter RP Log here...&#10;Ex:&#10;John says: Hello&#10;* John waves hand"></textarea>
+      <textarea id="textInput" data-t-ph="ph_text"></textarea>
     </div>
 
     <div class="control-group">
-      <div class="group-title">Tools & Mode</div>
-      
+      <div class="group-title" data-t="tool_title">Tools & Mode</div>
       <div class="mode-switcher">
-        <button class="mode-btn active" onclick="app.setMode('move')">Move / Edit</button>
-        <button class="mode-btn" onclick="app.setMode('censor')">Censor / Blur</button>
+        <button class="mode-btn active" id="modeMove" data-t="btn_move">Move / Edit</button>
+        <button class="mode-btn" id="modeCensor" data-t="btn_censor">Censor / Blur</button>
       </div>
-
       <div id="censorTools" style="display:none; flex-direction:column; gap:10px;">
         <div class="row">
            <div class="col">
-             <label>Pixel Size <span id="pixelVal" style="float:right; color:#666;">10px</span></label>
+             <label><span data-t="lbl_pixel">Pixel Size</span> <span id="pixelVal" style="float:right; color:#666;">10px</span></label>
              <input type="range" id="pixelSize" min="2" max="40" value="10">
            </div>
         </div>
         <div class="row">
-          <button class="btn-secondary" onclick="app.undoCensor()">Undo Last</button>
-          <button class="btn-secondary btn-danger" onclick="app.clearAllCensors()">Clear All</button>
+          <button class="btn-secondary" id="btnUndo" data-t="btn_undo">Undo Last</button>
+          <button class="btn-secondary btn-danger" id="btnClearCensor" data-t="btn_clear">Clear All</button>
         </div>
       </div>
     </div>
 
     <div class="control-group">
-      <div class="group-title">Typography & Style</div>
-      
+      <div class="group-title" data-t="style_title">Typography & Style</div>
       <div class="row">
-        <div class="col">
-           <label>Font Size</label>
-           <input type="number" id="fontSize" value="13">
-        </div>
-        <div class="col">
-           <label>Line Spacing</label>
-           <input type="number" id="lineSpacing" value="8">
-        </div>
+        <div class="col"><label data-t="lbl_font">Font Size</label><input type="number" id="fontSize" value="13"></div>
+        <div class="col"><label data-t="lbl_spacing">Line Spacing</label><input type="number" id="lineSpacing" value="8"></div>
       </div>
-      
       <div style="margin-top:10px;">
-        <label>Text Width Limit <span id="wrapVal" style="float:right; color:#666;">800px</span></label>
+        <label><span data-t="lbl_wrap">Max Text Width</span> <span id="wrapVal" style="float:right; color:#666;">800px</span></label>
         <input type="range" id="textWrapWidth" min="200" max="2000" value="800" step="10">
       </div>
-
       <div class="checkbox-wrapper">
-        <label><input type="checkbox" id="showBg" checked> Black Background</label>
-        <label><input type="checkbox" id="showStroke" checked> Text Stroke</label>
+        <label><input type="checkbox" id="showBg" checked> <span data-t="chk_bg">Black Background</span></label>
+        <label><input type="checkbox" id="showStroke" checked> <span data-t="chk_stroke">Text Stroke</span></label>
       </div>
     </div>
 
     <div class="control-group">
-      <div class="group-title">Image Source</div>
-      
+      <div class="group-title" data-t="img_title">Image Source</div>
       <div class="file-upload-styled">
-         <div class="file-btn-fake">📂 Click to Upload Image</div>
+         <div class="file-btn-fake" data-t="btn_upload">📂 Click to Upload Image</div>
          <input type="file" id="upload" accept="image/*">
       </div>
-
       <div class="row" style="margin-top:10px;">
-        <div class="col">
-           <label>Canvas W</label>
-           <input type="number" id="cWidth" value="800">
-        </div>
-        <div class="col">
-           <label>Canvas H</label>
-           <input type="number" id="cHeight" value="600">
-        </div>
+        <div class="col"><label data-t="lbl_w">Canvas W</label><input type="number" id="cWidth" value="800"></div>
+        <div class="col"><label data-t="lbl_h">Canvas H</label><input type="number" id="cHeight" value="600"></div>
       </div>
-      
-      <button class="btn-secondary" onclick="app.resetCurrentPos()">Recenter Image</button>
+      <button class="btn-secondary" id="btnCenter" data-t="btn_center">Recenter Image</button>
     </div>
 
     <div class="control-group" style="border-bottom:none;">
-       <div class="group-title">Export</div>
-       <button class="btn-primary" onclick="app.downloadCurrentScene()">Download Image (PNG)</button>
-       <button class="btn-secondary" id="downloadBtn" onclick="app.downloadAllScenes()">Download ZIP (All Scenes)</button>
-       <p class="helper-status">Right Click on blur to remove it.</p>
+       <div class="group-title" data-t="export_title">Export</div>
+       <button class="btn-primary" id="btnDlPng" data-t="dl_png">Download Image (PNG)</button>
+       <button class="btn-secondary" id="downloadBtn" data-t="dl_zip">Download ZIP (All Scenes)</button>
+       <p class="helper-status" data-t="helper_tip">Right Click on blur to remove it.</p>
     </div>
-
   </div>
 </div>
 
 <script>
-  // --- JAVASCRIPT CORE (Logic Unchanged from V42) ---
+  const i18n = {
+    th: {
+      txt_title: "แก้ไขข้อความ", ph_text: "ใส่ข้อความ Log ที่นี่...",
+      tool_title: "เครื่องมือ", btn_move: "ขยับ / แก้ไข", btn_censor: "เซ็นเซอร์ / เบลอ",
+      lbl_pixel: "ความละเอียด", btn_undo: "ย้อนกลับ", btn_clear: "ลบทั้งหมด",
+      style_title: "รูปแบบ", lbl_font: "ขนาดฟอนต์", lbl_spacing: "ระยะห่าง",
+      lbl_wrap: "ความกว้างสูงสุด", chk_bg: "พื้นหลังดำ", chk_stroke: "ขอบตัวหนังสือ",
+      img_title: "รูปภาพ", btn_upload: "📂 อัปโหลดรูป", lbl_w: "กว้าง", lbl_h: "สูง",
+      btn_center: "จัดกึ่งกลาง", export_title: "บันทึก", dl_png: "บันทึกรูปนี้ (PNG)",
+      dl_zip: "บันทึกทั้งหมด (ZIP)", helper_tip: "คลิกขวาที่รอยเบลอเพื่อลบออก", block_label: "กล่องข้อความ"
+    },
+    en: {
+      txt_title: "Text Editor", ph_text: "Enter Log here...\nJohn says: Hello\n(Phone): Hi\n* John waves",
+      tool_title: "Tools", btn_move: "Move / Edit", btn_censor: "Censor / Blur",
+      lbl_pixel: "Pixel Size", btn_undo: "Undo Last", btn_clear: "Clear All",
+      style_title: "Typography", lbl_font: "Font Size", lbl_spacing: "Line Spacing",
+      lbl_wrap: "Max Width", chk_bg: "Black BG", chk_stroke: "Stroke",
+      img_title: "Image", btn_upload: "📂 Upload Image", lbl_w: "W", lbl_h: "H",
+      btn_center: "Recenter", export_title: "Export", dl_png: "Download (PNG)",
+      dl_zip: "Download All (ZIP)", helper_tip: "Right Click to remove blur.", block_label: "Block"
+    }
+  };
+
   const app = {
     canvas: null, ctx: null, els: {}, scenes: [], currentSceneIndex: 0,
     isDragging: false, dragTarget: null, dragStart: { x: 0, y: 0 },
     mode: 'move', isCensoring: false, censorStart: { x: 0, y: 0 }, censorCurrent: { x: 0, y: 0 }, hoveredCensorIndex: -1,
-    isDownloading: false,
+    isDownloading: false, currentLang: 'en',
 
     init: function() {
       this.canvas = document.getElementById('canvas');
       this.ctx = this.canvas.getContext('2d');
+      // Bind elements safely
+      const $ = (id) => document.getElementById(id);
       this.els = {
-        text: document.getElementById('textInput'),
-        size: document.getElementById('fontSize'),
-        spacing: document.getElementById('lineSpacing'),
-        wrap: document.getElementById('textWrapWidth'),
-        wrapVal: document.getElementById('wrapVal'),
-        width: document.getElementById('cWidth'),
-        height: document.getElementById('cHeight'),
-        bg: document.getElementById('showBg'),
-        stroke: document.getElementById('showStroke'),
-        upload: document.getElementById('upload'),
-        sceneContainer: document.getElementById('sceneContainer'),
-        downloadBtn: document.getElementById('downloadBtn'),
-        blockLabel: document.getElementById('activeBlockLabel'),
-        censorTools: document.getElementById('censorTools'),
-        pixelSize: document.getElementById('pixelSize'),
-        pixelVal: document.getElementById('pixelVal'),
-        modeBtns: document.querySelectorAll('.mode-btn')
+        text: $('textInput'), size: $('fontSize'), spacing: $('lineSpacing'),
+        wrap: $('textWrapWidth'), wrapVal: $('wrapVal'),
+        width: $('cWidth'), height: $('cHeight'),
+        bg: $('showBg'), stroke: $('showStroke'), upload: $('upload'),
+        sceneContainer: $('sceneContainer'), downloadBtn: $('downloadBtn'),
+        blockLabel: $('activeBlockLabel'), censorTools: $('censorTools'),
+        pixelSize: $('pixelSize'), pixelVal: $('pixelVal'),
+        modeBtns: { move: $('modeMove'), censor: $('modeCensor') },
+        langBtns: { th: $('langTH'), en: $('langEN') }
       };
+      
       this.addNewScene(true);
-      this.setupEvents();
+      this.setupDOMEvents();
       this.resizeCanvas();
+      this.setLang('th');
+    },
+
+    setLang: function(lang) {
+      this.currentLang = lang;
+      this.els.langBtns.th.classList.toggle('active', lang === 'th');
+      this.els.langBtns.en.classList.toggle('active', lang === 'en');
+      const dict = i18n[lang];
+      document.querySelectorAll('[data-t]').forEach(el => {
+        const key = el.getAttribute('data-t'); if (dict[key]) el.innerText = dict[key];
+      });
+      document.querySelectorAll('[data-t-ph]').forEach(el => {
+        const key = el.getAttribute('data-t-ph'); if (dict[key]) el.placeholder = dict[key];
+      });
+      this.updateBlockUI();
     },
 
     Scene: class {
@@ -408,31 +365,27 @@
 
     addNewScene: function(isFirst = false) {
       const prevScene = !isFirst && this.scenes[this.currentSceneIndex] ? this.scenes[this.currentSceneIndex] : null;
-      const newScene = new this.Scene(prevScene);
-      this.scenes.push(newScene);
+      this.scenes.push(new this.Scene(prevScene));
       this.switchScene(this.scenes.length - 1);
     },
 
-    deleteScene: function(index, e) {
-      if(e) e.stopPropagation();
-      if (this.scenes.length <= 1) { alert("At least one scene is required."); return; }
+    deleteScene: function(index) {
+      if (this.scenes.length <= 1) { alert("Requires at least 1 scene."); return; }
       if (confirm(`Delete Scene ${index + 1}?`)) {
         this.scenes.splice(index, 1);
         if (index === this.currentSceneIndex) {
-          this.currentSceneIndex = Math.max(0, index - 1);
+            this.currentSceneIndex = Math.max(0, index - 1);
         } else if (index < this.currentSceneIndex) {
-          this.currentSceneIndex--;
-        }
+            this.currentSceneIndex--; 
+        } 
+        if (this.currentSceneIndex >= this.scenes.length) this.currentSceneIndex = this.scenes.length - 1;
         this.switchScene(this.currentSceneIndex);
       }
     },
 
     switchScene: function(index) {
-      if (index < 0) index = 0;
-      if (index >= this.scenes.length) index = this.scenes.length - 1;
-      this.currentSceneIndex = index;
+      this.currentSceneIndex = Math.max(0, Math.min(index, this.scenes.length - 1));
       const sc = this.scenes[this.currentSceneIndex];
-      
       this.updateBlockUI();
       this.els.size.value = sc.fontSize;
       this.els.spacing.value = sc.lineSpacing;
@@ -440,39 +393,61 @@
       this.els.wrapVal.innerText = sc.textWrap + 'px';
       this.els.pixelSize.value = sc.pixelSize;
       this.els.pixelVal.innerText = sc.pixelSize + 'px';
-      
       this.updateSceneUI();
       this.draw();
     },
 
+    // --- NEW: Safe DOM Creation for Scenes (Fixes delete bug) ---
     updateSceneUI: function() {
-      this.els.sceneContainer.innerHTML = '';
+      const container = this.els.sceneContainer;
+      container.innerHTML = ''; // clear
+      
       this.scenes.forEach((_, idx) => {
-        const btn = document.createElement('button');
+        // Create Button Container
+        const btn = document.createElement('div');
         btn.className = `scene-btn ${idx === this.currentSceneIndex ? 'active' : ''}`;
-        btn.innerHTML = `Scene ${idx + 1} <span class="scene-close" onclick="app.deleteScene(${idx}, event)">×</span>`;
-        btn.onclick = () => this.switchScene(idx);
-        this.els.sceneContainer.appendChild(btn);
+        
+        // Scene Label Text
+        const textSpan = document.createElement('span');
+        textSpan.innerText = `Scene ${idx + 1}`;
+        btn.appendChild(textSpan);
+
+        // Delete (X) Icon
+        const closeSpan = document.createElement('span');
+        closeSpan.className = 'scene-close';
+        closeSpan.innerText = '×';
+        closeSpan.title = 'Delete Scene';
+        
+        // Click Event: Delete
+        closeSpan.addEventListener('click', (e) => {
+            e.stopPropagation(); // Stop bubbling!
+            this.deleteScene(idx);
+        });
+        
+        btn.appendChild(closeSpan);
+
+        // Click Event: Switch Scene
+        btn.addEventListener('click', () => {
+            this.switchScene(idx);
+        });
+
+        container.appendChild(btn);
       });
     },
 
-    getActiveBlock: function() { return this.scenes[this.currentSceneIndex].blocks[this.scenes[this.currentSceneIndex].activeBlockIndex]; },
-
     addTextBlock: function() {
         const sc = this.scenes[this.currentSceneIndex];
-        sc.blocks.push({ text: "New Text...", x: 50, y: 50, width: 800, height: 0, bounds: null });
+        sc.blocks.push({ text: "...", x: 50, y: 50, width: 800, height: 0, bounds: null });
         sc.activeBlockIndex = sc.blocks.length - 1;
         this.updateBlockUI(); this.draw();
     },
-
     deleteTextBlock: function() {
         const sc = this.scenes[this.currentSceneIndex];
-        if (sc.blocks.length <= 1) { alert("Keep at least one block."); return; }
+        if (sc.blocks.length <= 1) return;
         sc.blocks.splice(sc.activeBlockIndex, 1);
         sc.activeBlockIndex = Math.max(0, sc.activeBlockIndex - 1);
         this.updateBlockUI(); this.draw();
     },
-
     cycleBlock: function(dir) {
         const sc = this.scenes[this.currentSceneIndex];
         let newIdx = sc.activeBlockIndex + dir;
@@ -481,22 +456,22 @@
         sc.activeBlockIndex = newIdx;
         this.updateBlockUI(); this.draw(); 
     },
-
     updateBlockUI: function() {
+        if(!this.scenes[this.currentSceneIndex]) return;
         const sc = this.scenes[this.currentSceneIndex];
         const block = sc.blocks[sc.activeBlockIndex];
-        this.els.text.value = block.text;
-        this.els.blockLabel.innerText = `Block #${sc.activeBlockIndex + 1}`;
+        if(block) {
+            this.els.text.value = block.text;
+            this.els.blockLabel.innerText = `${i18n[this.currentLang].block_label} #${sc.activeBlockIndex + 1}`;
+        }
     },
-
     undoCensor: function() {
         const sc = this.scenes[this.currentSceneIndex];
         if (sc.censoredAreas.length > 0) { sc.censoredAreas.pop(); this.draw(); }
     },
-
     clearAllCensors: function() {
         const sc = this.scenes[this.currentSceneIndex];
-        if (sc.censoredAreas.length > 0 && confirm("Clear all censors?")) { sc.censoredAreas = []; this.draw(); }
+        if (sc.censoredAreas.length > 0 && confirm("Clear all?")) { sc.censoredAreas = []; this.draw(); }
     },
 
     resizeCanvas: function() {
@@ -509,50 +484,73 @@
       const sc = this.scenes[this.currentSceneIndex];
       if (!sc) return;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      
+      // 1. Draw Image
       if (sc.imgLoaded && sc.img) {
         this.ctx.drawImage(sc.img, sc.imgX, sc.imgY, sc.img.width * sc.imgScale, sc.img.height * sc.imgScale);
       } else {
         this.drawPlaceholder();
       }
 
+      // 2. Draw Text (Content Only)
+      sc.blocks.forEach((block) => {
+          this.drawTextBlock(sc, block);
+      });
+
+      // 3. Apply Censors (Now captures both Image AND Text)
       if (sc.censoredAreas.length > 0) {
           sc.censoredAreas.forEach(area => this.pixelateArea(area.x, area.y, area.w, area.h));
       }
-      
+
+      // 4. Draw UI Overlays (If not downloading)
       if (!this.isDownloading) {
-          if (this.mode === 'censor' && this.hoveredCensorIndex !== -1 && sc.censoredAreas[this.hoveredCensorIndex]) {
-              const area = sc.censoredAreas[this.hoveredCensorIndex];
-              this.ctx.strokeStyle = "#c0392b"; this.ctx.lineWidth = 2;
-              this.ctx.setLineDash([5, 3]); this.ctx.strokeRect(area.x, area.y, area.w, area.h); this.ctx.setLineDash([]);
+          // Active Text Block Border
+          if (this.mode === 'move') {
+              const activeBlock = sc.blocks[sc.activeBlockIndex];
+              if (activeBlock && activeBlock.bounds) {
+                   this.ctx.strokeStyle = "rgba(197, 160, 89, 0.8)"; 
+                   this.ctx.lineWidth = 1; 
+                   this.ctx.strokeRect(activeBlock.bounds.x, activeBlock.bounds.y, activeBlock.bounds.w, activeBlock.bounds.h);
+              }
           }
-          if (this.isCensoring && this.mode === 'censor') {
-              const w = this.censorCurrent.x - this.censorStart.x;
-              const h = this.censorCurrent.y - this.censorStart.y;
-              this.ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; this.ctx.fillRect(this.censorStart.x, this.censorStart.y, w, h);
-              this.ctx.strokeStyle = "#e67e22"; this.ctx.lineWidth = 2; this.ctx.strokeRect(this.censorStart.x, this.censorStart.y, w, h);
+
+          // Censor Hover/Active outlines
+          if (this.mode === 'censor') {
+              if (this.hoveredCensorIndex !== -1 && sc.censoredAreas[this.hoveredCensorIndex]) {
+                  const area = sc.censoredAreas[this.hoveredCensorIndex];
+                  this.ctx.strokeStyle = "#c0392b"; this.ctx.lineWidth = 2;
+                  this.ctx.setLineDash([5, 3]); this.ctx.strokeRect(area.x, area.y, area.w, area.h); this.ctx.setLineDash([]);
+              }
+              if (this.isCensoring) {
+                  const w = this.censorCurrent.x - this.censorStart.x;
+                  const h = this.censorCurrent.y - this.censorStart.y;
+                  this.ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; this.ctx.fillRect(this.censorStart.x, this.censorStart.y, w, h);
+                  this.ctx.strokeStyle = "#e67e22"; this.ctx.lineWidth = 2; this.ctx.strokeRect(this.censorStart.x, this.censorStart.y, w, h);
+              }
           }
       }
-
-      sc.blocks.forEach((block, idx) => {
-          this.drawTextBlock(sc, block, idx === sc.activeBlockIndex);
-      });
     },
 
     pixelateArea: function(x, y, w, h) {
         if (w === 0 || h === 0) return;
         const sc = this.scenes[this.currentSceneIndex];
         const sampleSize = sc.pixelSize || 10;
+        
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
         const rx = Math.floor(w < 0 ? x + w : x);
         const ry = Math.floor(h < 0 ? y + h : y);
-        const rw = Math.abs(w);
-        const rh = Math.abs(h);
+        const rw = Math.abs(w); const rh = Math.abs(h);
+        
+        if (rw < 1 || rh < 1) return;
         tempCanvas.width = rw; tempCanvas.height = rh;
+        
         tempCtx.drawImage(this.canvas, rx, ry, rw, rh, 0, 0, rw, rh);
-        this.ctx.imageSmoothingEnabled = false;
+        
         const sw = Math.max(1, Math.floor(rw / sampleSize));
         const sh = Math.max(1, Math.floor(rh / sampleSize));
+        
+        this.ctx.imageSmoothingEnabled = false;
         this.ctx.drawImage(tempCanvas, 0, 0, rw, rh, rx, ry, sw, sh);
         this.ctx.drawImage(this.canvas, rx, ry, sw, sh, rx, ry, rw, rh);
         this.ctx.imageSmoothingEnabled = true;
@@ -564,64 +562,67 @@
       this.ctx.fillText(`Scene ${this.currentSceneIndex + 1}`, this.canvas.width/2, this.canvas.height/2);
     },
 
-    drawTextBlock: function(scene, block, isActive) {
+    drawTextBlock: function(scene, block) {
       if (!block.text) { block.bounds = null; return; }
       const fontSize = parseInt(this.els.size.value) || 13;
       const spacing = parseInt(this.els.spacing.value) || 8;
       const wrapWidth = parseInt(this.els.wrap.value) || 800;
       const lineHeight = fontSize + spacing; 
+      
       const cAction = "#C2A2DA"; const cNormal = "#FFFFFF"; const cWhisper = "#BDBDBD"; 
-      const cPhone = "#FFFF00"; const cInfo = "#5da3e3"; const cMoney = "#33AA33";  
+      const cPhone = "#FFFF00"; const cMoney = "#33AA33";  
 
       this.ctx.font = `600 ${fontSize}px sans-serif`;
       this.ctx.textBaseline = "top"; this.ctx.textAlign = "left";
 
       const lines = block.text.split('\n');
-      let currentY = block.y; let maxWidth = 0;
+      let currentY = block.y; let maxContentWidth = 0; 
+      const padX = fontSize * 0.1; const topOffset = fontSize * 0.35; const boxHeight = fontSize * 1.7; 
       const startY = currentY;
 
       lines.forEach(line => {
           let text = line.trim(); let lowerText = text.toLowerCase();
           let baseColor = cNormal; let isAction = false; 
-          if (text.startsWith('*') || text.startsWith('>') || lowerText.startsWith('(phone) *') || lowerText.startsWith('(โทรศัพท์) *')) { 
+          if (lowerText.includes('(phone)') || lowerText.includes('[phone]') || lowerText.includes('cellphone') || lowerText.includes('(โทรศัพท์)')) {
+             baseColor = cPhone;
+          } else if (text.startsWith('*') || text.startsWith('>') || lowerText.startsWith('me ')) { 
               baseColor = cAction; isAction = true; 
-          } else if (lowerText.includes('[info]') || lowerText.includes('description')) { baseColor = cInfo; 
-          } else if (lowerText.includes('(phone)') || lowerText.includes('[phone]') || lowerText.includes('cellphone')) { baseColor = cPhone; 
-          } else if (lowerText.includes('whispers') || lowerText.includes('(low)') || lowerText.includes('พูดเบา')) { baseColor = cWhisper; 
-          } else if (lowerText.startsWith('$') || lowerText.startsWith('money')) { baseColor = cMoney; }
-
+          } else if (lowerText.includes('whispers') || lowerText.includes('(low)') || lowerText.includes('พูดเบา')) { 
+              baseColor = cWhisper; 
+          } else if (lowerText.startsWith('$') || lowerText.startsWith('money')) { 
+             baseColor = cMoney; 
+          }
           const words = text.split(' '); let buffer = '';
           for (let i = 0; i < words.length; i++) {
               const testLine = buffer + words[i] + ' ';
-              const metrics = this.ctx.measureText(testLine);
-              if (metrics.width > wrapWidth && i > 0) {
-                  this.drawFragmentedLine(buffer, block.x, currentY, fontSize, baseColor, isAction);
-                  maxWidth = Math.max(maxWidth, this.ctx.measureText(buffer).width);
+              if (this.ctx.measureText(testLine).width > wrapWidth && i > 0) {
+                  const lineW = this.drawFragmentedLine(buffer, block.x, currentY, fontSize, baseColor, isAction, padX, topOffset, boxHeight);
+                  if(lineW > maxContentWidth) maxContentWidth = lineW;
                   buffer = words[i] + ' '; currentY += lineHeight;
               } else { buffer = testLine; }
           }
-          this.drawFragmentedLine(buffer, block.x, currentY, fontSize, baseColor, isAction);
-          maxWidth = Math.max(maxWidth, this.ctx.measureText(buffer).width);
+          const lineW = this.drawFragmentedLine(buffer, block.x, currentY, fontSize, baseColor, isAction, padX, topOffset, boxHeight);
+          if(lineW > maxContentWidth) maxContentWidth = lineW;
           currentY += lineHeight;
       });
 
-      block.bounds = { x: block.x, y: startY, w: maxWidth, h: currentY - startY };
-      if (isActive && this.mode === 'move' && !this.isDownloading) {
-          this.ctx.strokeStyle = "rgba(197, 160, 89, 0.5)"; 
-          this.ctx.lineWidth = 1; this.ctx.strokeRect(block.bounds.x - 5, block.bounds.y - 5, block.bounds.w + 10, block.bounds.h + 10);
-      }
+      block.bounds = { 
+          x: block.x - padX, y: startY - topOffset, 
+          w: maxContentWidth + (padX * 2), h: currentY - startY 
+      };
     },
 
-    drawFragmentedLine: function(text, x, y, size, baseColor, isAction) {
-      const visibleText = text.trimEnd(); if (!visibleText) return;
-      const padX = size * 0.1; const topOffset = size * 0.35; const boxHeight = size * 1.7; 
+    drawFragmentedLine: function(text, x, y, size, baseColor, isAction, padX, topOffset, boxHeight) {
+      const visibleText = text.trimEnd(); if (!visibleText) return 0;
+      const totalWidth = this.ctx.measureText(visibleText).width;
       if (this.els.bg.checked) {
-          const w = this.ctx.measureText(visibleText).width;
-          this.ctx.fillStyle = "#000000"; this.ctx.fillRect(x - padX, y - topOffset, w + (padX * 2), boxHeight);
+          this.ctx.fillStyle = "#000000"; 
+          this.ctx.fillRect(x - padX, y - topOffset, totalWidth + (padX * 2), boxHeight);
       }
       const words = visibleText.split(' '); let currentX = x; const spaceWidth = this.ctx.measureText(" ").width;
       words.forEach((word, idx) => {
-         let wordColor = baseColor; if (word.includes('$') && !isAction) { wordColor = "#33AA33"; }
+         let wordColor = baseColor; 
+         if (word.includes('$') && !isAction && baseColor !== "#FFFF00") { wordColor = "#33AA33"; }
          if (this.els.stroke.checked) {
              this.ctx.strokeStyle = 'black'; this.ctx.lineWidth = size * 0.15; 
              this.ctx.lineJoin = 'round'; this.ctx.miterLimit = 2; this.ctx.strokeText(word, currentX, y);
@@ -629,6 +630,7 @@
          this.ctx.fillStyle = wordColor; this.ctx.fillText(word, currentX, y);
          currentX += this.ctx.measureText(word).width; if (idx < words.length - 1) currentX += spaceWidth;
       });
+      return totalWidth;
     },
 
     getMousePos: function(evt) {
@@ -641,15 +643,15 @@
 
     setMode: function(m) {
         this.mode = m;
-        this.els.modeBtns.forEach(b => b.classList.remove('active', 'active-censor'));
+        this.els.modeBtns.move.classList.toggle('active', m === 'move');
+        this.els.modeBtns.censor.classList.toggle('active-censor', m === 'censor');
+        
         if (m === 'move') {
             this.canvas.style.cursor = 'default';
-            this.els.modeBtns[0].classList.add('active');
             this.els.censorTools.style.display = 'none';
             this.hoveredCensorIndex = -1;
         } else {
             this.canvas.style.cursor = 'crosshair';
-            this.els.modeBtns[1].classList.add('active-censor');
             this.els.censorTools.style.display = 'flex';
         }
         this.draw();
@@ -667,8 +669,25 @@
         this.draw();
     },
 
-    setupEvents: function() {
+    setupDOMEvents: function() {
       const self = this;
+      // Button Listeners (No more inline onclick!)
+      document.getElementById('addSceneBtn').addEventListener('click', () => self.addNewScene());
+      document.getElementById('langTH').addEventListener('click', () => self.setLang('th'));
+      document.getElementById('langEN').addEventListener('click', () => self.setLang('en'));
+      document.getElementById('btnPrevBlock').addEventListener('click', () => self.cycleBlock(-1));
+      document.getElementById('btnNextBlock').addEventListener('click', () => self.cycleBlock(1));
+      document.getElementById('btnAddBlock').addEventListener('click', () => self.addTextBlock());
+      document.getElementById('btnDelBlock').addEventListener('click', () => self.deleteTextBlock());
+      document.getElementById('modeMove').addEventListener('click', () => self.setMode('move'));
+      document.getElementById('modeCensor').addEventListener('click', () => self.setMode('censor'));
+      document.getElementById('btnUndo').addEventListener('click', () => self.undoCensor());
+      document.getElementById('btnClearCensor').addEventListener('click', () => self.clearAllCensors());
+      document.getElementById('btnCenter').addEventListener('click', () => self.resetCurrentPos());
+      document.getElementById('btnDlPng').addEventListener('click', () => self.downloadCurrentScene());
+      document.getElementById('downloadBtn').addEventListener('click', () => self.downloadAllScenes());
+
+      // Inputs
       this.els.text.addEventListener('input', (e) => { 
           self.scenes[self.currentSceneIndex].blocks[self.scenes[self.currentSceneIndex].activeBlockIndex].text = e.target.value; self.draw(); 
       });
@@ -705,6 +724,7 @@
         reader.readAsDataURL(e.target.files[0]);
       });
 
+      // Canvas Mouse Events
       this.canvas.addEventListener('mousedown', (e) => {
           const mouse = self.getMousePos(e);
           const sc = self.scenes[self.currentSceneIndex];
@@ -721,8 +741,12 @@
                         hitBlock = b; sc.activeBlockIndex = i; self.updateBlockUI(); break;
                     }
                 }
-                if (hitBlock) { self.dragTarget = hitBlock; self.dragOffset = { x: mouse.x - hitBlock.x, y: mouse.y - hitBlock.y }; } 
-                else { self.dragTarget = 'image'; }
+                if (hitBlock) { 
+                    self.dragTarget = hitBlock; 
+                    self.dragOffset = { x: mouse.x - hitBlock.x, y: mouse.y - hitBlock.y }; 
+                } else { 
+                    self.dragTarget = 'image'; 
+                }
                 self.draw();
               }
           }
@@ -770,12 +794,17 @@
              if (self.dragTarget === 'image') {
                  const dx = mouse.x - self.dragStart.x; const dy = mouse.y - self.dragStart.y;
                  sc.imgX += dx; sc.imgY += dy; self.dragStart = mouse; 
-             } else if (self.dragTarget) {
+             } else if (self.dragTarget && self.dragTarget.bounds) {
                  let newX = mouse.x - self.dragOffset.x; let newY = mouse.y - self.dragOffset.y;
-                 const bw = self.dragTarget.bounds ? self.dragTarget.bounds.w : 0;
-                 const bh = self.dragTarget.bounds ? self.dragTarget.bounds.h : 0;
-                 if (newX < 0) newX = 0; if (newX + bw > self.canvas.width) newX = self.canvas.width - bw;
-                 if (newY < 0) newY = 0; if (newY + bh > self.canvas.height) newY = self.canvas.height - bh;
+                 const bw = self.dragTarget.bounds.w; const bh = self.dragTarget.bounds.h;
+                 const fontSize = parseInt(self.els.size.value) || 13;
+                 const padX = fontSize * 0.1; const topOffset = fontSize * 0.35;
+
+                 if (newX < padX) newX = padX;
+                 if (newX > self.canvas.width - bw + padX) newX = self.canvas.width - bw + padX;
+                 if (newY < topOffset) newY = topOffset;
+                 if (newY > self.canvas.height - bh + topOffset) newY = self.canvas.height - bh + topOffset;
+                 
                  self.dragTarget.x = newX; self.dragTarget.y = newY;
              }
              self.draw();
@@ -804,7 +833,8 @@
 
     downloadAllScenes: async function() {
       const zip = new JSZip(); const folder = zip.folder("GTA_Logs");
-      this.els.downloadBtn.innerText = "Processing...";
+      const originalText = this.els.downloadBtn.innerText;
+      this.els.downloadBtn.innerText = this.currentLang === 'th' ? "กำลังประมวลผล..." : "Processing...";
       const originalIndex = this.currentSceneIndex;
       this.isDownloading = true; 
       try {
@@ -818,7 +848,7 @@
       } catch (err) { console.error(err); alert("Error"); } 
       finally { 
           this.isDownloading = false; this.switchScene(originalIndex); 
-          this.els.downloadBtn.innerText = "Download ZIP (All Scenes)"; 
+          this.els.downloadBtn.innerText = originalText;
       }
     }
   };
