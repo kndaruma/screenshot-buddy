@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GTA-RP SCREENSHOT BUDDY</title>
+<title>GTA-RP Screenshot Buddy</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-  /* --- Variables --- */
+  /* --- Luxury Variables --- */
   :root {
     --bg-main: #050505;
     --bg-sidebar: #0f0f0f;
@@ -170,10 +170,10 @@
   /* Helper text - Faded and small */
   .helper-status {
       font-size: 10px; 
-      color: #444; /* Darker gray to be less prominent */
+      color: #444; 
       text-align: center;
       margin-top: 15px;
-      opacity: 0.4; /* Faded */
+      opacity: 0.4; 
       pointer-events: none;
       transition: 0.3s;
   }
@@ -195,7 +195,7 @@
 
   <div class="sidebar">
     <div class="sidebar-header">
-      <h1 class="brand-title">GTA-RP SCREENSHOT BUDDY</h1>
+      <h1 class="brand-title">GTA-RP Screenshot Buddy</h1>
       <div class="lang-switch">
         <button class="lang-btn" id="langTH">TH</button>
         <button class="lang-btn active" id="langEN">EN</button>
@@ -277,7 +277,7 @@
 <script>
   const i18n = {
     th: {
-      txt_title: "แก้ไขข้อความ", ph_text: "ใส่ข้อความ Log ที่นี่...",
+      txt_title: "แก้ไขข้อความ", ph_text: "ใส่ข้อความ Log ที่นี่...\nJohn says: สวัสดี\n(Phone): ฮัลโหล\n* John โบกมือ\n(Phone) * John หัวเราะ",
       tool_title: "เครื่องมือ", btn_move: "ขยับ / แก้ไข", btn_censor: "เซ็นเซอร์ / เบลอ",
       lbl_pixel: "ความละเอียด", btn_undo: "ย้อนกลับ", btn_clear: "ลบทั้งหมด",
       style_title: "รูปแบบ", lbl_font: "ขนาดฟอนต์", lbl_spacing: "ระยะห่าง",
@@ -287,7 +287,7 @@
       dl_zip: "บันทึกทั้งหมด (ZIP)", helper_tip: "คลิกขวาที่รอยเบลอเพื่อลบออก", block_label: "กล่องข้อความ"
     },
     en: {
-      txt_title: "Text Editor", ph_text: "Enter Log here...\nJohn says: Hello\n(Phone): Hi\n* John waves",
+      txt_title: "Text Editor", ph_text: "Enter Log here...\nJohn says: Hello\n(Phone): Hi\n* John waves\n(Phone) * John laughs",
       tool_title: "Tools", btn_move: "Move / Edit", btn_censor: "Censor / Blur",
       lbl_pixel: "Pixel Size", btn_undo: "Undo Last", btn_clear: "Clear All",
       style_title: "Typography", lbl_font: "Font Size", lbl_spacing: "Line Spacing",
@@ -298,7 +298,8 @@
     }
   };
 
-  const app = {
+  // Assign to window for global access
+  window.app = {
     canvas: null, ctx: null, els: {}, scenes: [], currentSceneIndex: 0,
     isDragging: false, dragTarget: null, dragStart: { x: 0, y: 0 },
     mode: 'move', isCensoring: false, censorStart: { x: 0, y: 0 }, censorCurrent: { x: 0, y: 0 }, hoveredCensorIndex: -1,
@@ -307,7 +308,6 @@
     init: function() {
       this.canvas = document.getElementById('canvas');
       this.ctx = this.canvas.getContext('2d');
-      // Bind elements safely
       const $ = (id) => document.getElementById(id);
       this.els = {
         text: $('textInput'), size: $('fontSize'), spacing: $('lineSpacing'),
@@ -397,40 +397,30 @@
       this.draw();
     },
 
-    // --- NEW: Safe DOM Creation for Scenes (Fixes delete bug) ---
     updateSceneUI: function() {
       const container = this.els.sceneContainer;
-      container.innerHTML = ''; // clear
+      container.innerHTML = ''; 
       
       this.scenes.forEach((_, idx) => {
-        // Create Button Container
         const btn = document.createElement('div');
         btn.className = `scene-btn ${idx === this.currentSceneIndex ? 'active' : ''}`;
         
-        // Scene Label Text
         const textSpan = document.createElement('span');
         textSpan.innerText = `Scene ${idx + 1}`;
         btn.appendChild(textSpan);
 
-        // Delete (X) Icon
         const closeSpan = document.createElement('span');
         closeSpan.className = 'scene-close';
         closeSpan.innerText = '×';
         closeSpan.title = 'Delete Scene';
         
-        // Click Event: Delete
         closeSpan.addEventListener('click', (e) => {
-            e.stopPropagation(); // Stop bubbling!
+            e.stopPropagation(); 
             this.deleteScene(idx);
         });
         
         btn.appendChild(closeSpan);
-
-        // Click Event: Switch Scene
-        btn.addEventListener('click', () => {
-            this.switchScene(idx);
-        });
-
+        btn.addEventListener('click', () => { this.switchScene(idx); });
         container.appendChild(btn);
       });
     },
@@ -485,26 +475,21 @@
       if (!sc) return;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       
-      // 1. Draw Image
       if (sc.imgLoaded && sc.img) {
         this.ctx.drawImage(sc.img, sc.imgX, sc.imgY, sc.img.width * sc.imgScale, sc.img.height * sc.imgScale);
       } else {
         this.drawPlaceholder();
       }
 
-      // 2. Draw Text (Content Only)
       sc.blocks.forEach((block) => {
           this.drawTextBlock(sc, block);
       });
 
-      // 3. Apply Censors (Now captures both Image AND Text)
       if (sc.censoredAreas.length > 0) {
           sc.censoredAreas.forEach(area => this.pixelateArea(area.x, area.y, area.w, area.h));
       }
 
-      // 4. Draw UI Overlays (If not downloading)
       if (!this.isDownloading) {
-          // Active Text Block Border
           if (this.mode === 'move') {
               const activeBlock = sc.blocks[sc.activeBlockIndex];
               if (activeBlock && activeBlock.bounds) {
@@ -513,8 +498,6 @@
                    this.ctx.strokeRect(activeBlock.bounds.x, activeBlock.bounds.y, activeBlock.bounds.w, activeBlock.bounds.h);
               }
           }
-
-          // Censor Hover/Active outlines
           if (this.mode === 'censor') {
               if (this.hoveredCensorIndex !== -1 && sc.censoredAreas[this.hoveredCensorIndex]) {
                   const area = sc.censoredAreas[this.hoveredCensorIndex];
@@ -583,15 +566,23 @@
       lines.forEach(line => {
           let text = line.trim(); let lowerText = text.toLowerCase();
           let baseColor = cNormal; let isAction = false; 
-          if (lowerText.includes('(phone)') || lowerText.includes('[phone]') || lowerText.includes('cellphone') || lowerText.includes('(โทรศัพท์)')) {
-             baseColor = cPhone;
-          } else if (text.startsWith('*') || text.startsWith('>') || lowerText.startsWith('me ')) { 
+
+          // FIX: Action Priority Logic (Same as V51)
+          const isPhoneAction = /^[(\[]\s*(phone|cellphone|โทรศัพท์)\s*[)\]]\s*\*/i.test(text);
+
+          if (text.startsWith('*') || text.startsWith('>') || lowerText.startsWith('me ') || isPhoneAction) { 
               baseColor = cAction; isAction = true; 
-          } else if (lowerText.includes('whispers') || lowerText.includes('(low)') || lowerText.includes('พูดเบา')) { 
+          } 
+          else if (lowerText.includes('(phone)') || lowerText.includes('[phone]') || lowerText.includes('cellphone') || lowerText.includes('(โทรศัพท์)')) {
+             baseColor = cPhone;
+          } 
+          else if (lowerText.includes('whispers') || lowerText.includes('(low)') || lowerText.includes('พูดเบา')) { 
               baseColor = cWhisper; 
-          } else if (lowerText.startsWith('$') || lowerText.startsWith('money')) { 
+          } 
+          else if (lowerText.startsWith('$') || lowerText.startsWith('money')) { 
              baseColor = cMoney; 
           }
+
           const words = text.split(' '); let buffer = '';
           for (let i = 0; i < words.length; i++) {
               const testLine = buffer + words[i] + ' ';
@@ -671,7 +662,6 @@
 
     setupDOMEvents: function() {
       const self = this;
-      // Button Listeners (No more inline onclick!)
       document.getElementById('addSceneBtn').addEventListener('click', () => self.addNewScene());
       document.getElementById('langTH').addEventListener('click', () => self.setLang('th'));
       document.getElementById('langEN').addEventListener('click', () => self.setLang('en'));
@@ -724,7 +714,6 @@
         reader.readAsDataURL(e.target.files[0]);
       });
 
-      // Canvas Mouse Events
       this.canvas.addEventListener('mousedown', (e) => {
           const mouse = self.getMousePos(e);
           const sc = self.scenes[self.currentSceneIndex];
@@ -853,7 +842,7 @@
     }
   };
 
-  window.addEventListener('DOMContentLoaded', () => { app.init(); });
+  window.addEventListener('DOMContentLoaded', () => { window.app.init(); });
 </script>
 </body>
 </html>
