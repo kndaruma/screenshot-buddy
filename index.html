@@ -307,6 +307,7 @@
     isDragging: false, dragTarget: null, dragStart: { x: 0, y: 0 },
     mode: 'move', isCensoring: false, censorStart: { x: 0, y: 0 }, censorCurrent: { x: 0, y: 0 }, hoveredCensorIndex: -1,
     isDownloading: false, currentLang: 'en',
+    showWrapGuide: false,
 
     init: function() {
       this.canvas = document.getElementById('canvas');
@@ -320,7 +321,6 @@
         blockLabel: $('activeBlockLabel'), censorTools: $('censorTools'),
         pixelSize: $('pixelSize'), modeBtns: { move: $('modeMove'), censor: $('modeCensor') },
         langBtns: { th: $('langTH'), en: $('langEN') },
-        // Overlay els
         uploadOverlay: $('uploadOverlay'), overlayControls: $('overlayControls'),
         ovOpacity: $('ovOpacity'), ovOpacityVal: $('ovOpacityVal'),
         ovScale: $('ovScale'), ovScaleVal: $('ovScaleVal'),
@@ -355,8 +355,6 @@
         this.imgY = copyFrom ? copyFrom.imgY : 0;
         this.imgScale = copyFrom ? copyFrom.imgScale : 1;
         this.censoredAreas = copyFrom ? JSON.parse(JSON.stringify(copyFrom.censoredAreas)) : [];
-        
-        // Overlays array
         this.overlays = copyFrom ? copyFrom.overlays.map(o => ({...o})) : [];
         this.activeOverlayIndex = -1;
 
@@ -417,10 +415,8 @@
       });
     },
 
-    // --- Overlay Logic ---
     addOverlay: function(img) {
       const sc = this.scenes[this.currentSceneIndex];
-      // Default to center
       const x = (this.canvas.width - 150) / 2;
       const y = (this.canvas.height - 150) / 2;
       sc.overlays.push({ 
@@ -455,7 +451,6 @@
        }
     },
 
-    // --- Block Logic ---
     addTextBlock: function() {
         const sc = this.scenes[this.currentSceneIndex];
         sc.blocks.push({ text: "...", x: 50, y: 50, width: 800, height: 0, bounds: null });
@@ -498,7 +493,7 @@
       if (!sc) return;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       
-      // 1. BG Layer
+      // 1. BG
       if (sc.imgLoaded && sc.img) {
         this.ctx.drawImage(sc.img, sc.imgX, sc.imgY, sc.img.width * sc.imgScale, sc.img.height * sc.imgScale);
       } else {
@@ -507,7 +502,7 @@
         this.ctx.fillText(`Scene ${this.currentSceneIndex + 1}`, this.canvas.width/2, this.canvas.height/2);
       }
 
-      // 2. Overlay Layer
+      // 2. Overlays
       sc.overlays.forEach((ov, idx) => {
           this.ctx.save();
           this.ctx.globalAlpha = ov.opacity;
@@ -522,16 +517,30 @@
           }
       });
 
-      // 3. Text Layer
+      // 3. Texts
       sc.blocks.forEach((block) => { this.drawTextBlock(sc, block); });
 
-      // 4. Censor Layer
+      // 4. Censored
       if (sc.censoredAreas.length > 0) {
           sc.censoredAreas.forEach(area => this.pixelateArea(area.x, area.y, area.w, area.h));
       }
 
-      // 5. UI Helpers
       if (!this.isDownloading) {
+          if (this.showWrapGuide) {
+              const activeBlock = sc.blocks[sc.activeBlockIndex];
+              if (activeBlock) {
+                  const limitX = activeBlock.x + (parseInt(this.els.wrap.value) || 800);
+                  this.ctx.beginPath();
+                  this.ctx.strokeStyle = "rgba(255, 50, 50, 0.6)";
+                  this.ctx.lineWidth = 1;
+                  this.ctx.setLineDash([5, 5]);
+                  this.ctx.moveTo(limitX, 0);
+                  this.ctx.lineTo(limitX, this.canvas.height);
+                  this.ctx.stroke();
+                  this.ctx.setLineDash([]);
+              }
+          }
+
           if (this.mode === 'move') {
               const activeBlock = sc.blocks[sc.activeBlockIndex];
               if (activeBlock && activeBlock.bounds) {
@@ -662,7 +671,6 @@
     setupDOMEvents: function() {
       const self = this;
       
-      // FIXED: Mouse Wheel Zoom Logic
       this.canvas.addEventListener('wheel', (e) => {
           const sc = self.scenes[self.currentSceneIndex];
           if (self.mode === 'move' && sc.imgLoaded) {
@@ -695,18 +703,21 @@
           } 
       });
       document.getElementById('btnDlPng').addEventListener('click', () => self.isDownloading = true || self.draw() || self.canvas.toBlob(b => { saveAs(b, `Scene-${self.currentSceneIndex+1}.png`); self.isDownloading = false; self.draw(); }));
-      document.getElementById('downloadBtn').addEventListener('click', async () => { /* ZIP Logic Same as V51 */ });
+      document.getElementById('downloadBtn').addEventListener('click', async () => { /* ZIP Logic Omitted for brevity */ });
       
-      // Standard Inputs
       this.els.text.addEventListener('input', (e) => { self.scenes[self.currentSceneIndex].blocks[self.scenes[self.currentSceneIndex].activeBlockIndex].text = e.target.value; self.draw(); });
       this.els.size.addEventListener('input', (e) => { self.scenes[self.currentSceneIndex].fontSize = e.target.value; self.draw(); });
       this.els.spacing.addEventListener('input', (e) => { self.scenes[self.currentSceneIndex].lineSpacing = e.target.value; self.draw(); });
-      this.els.wrap.addEventListener('input', (e) => { self.scenes[self.currentSceneIndex].textWrap = e.target.value; self.draw(); });
+      this.els.wrap.addEventListener('input', (e) => { 
+          self.scenes[self.currentSceneIndex].textWrap = e.target.value; 
+          self.showWrapGuide = true; self.draw();
+      });
+      this.els.wrap.addEventListener('change', () => { self.showWrapGuide = false; self.draw(); });
+      
       this.els.pixelSize.addEventListener('input', (e) => { self.scenes[self.currentSceneIndex].pixelSize = e.target.value; self.draw(); });
       this.els.bg.addEventListener('change', () => this.draw()); this.els.stroke.addEventListener('change', () => this.draw());
       [this.els.width, this.els.height].forEach(el => el.addEventListener('change', () => this.resizeCanvas()));
 
-      // BG Upload
       this.els.upload.addEventListener('change', (e) => {
          if (!e.target.files[0]) return;
          const reader = new FileReader();
@@ -721,7 +732,6 @@
          }; reader.readAsDataURL(e.target.files[0]);
       });
 
-      // Overlay Events
       this.els.uploadOverlay.addEventListener('change', (e) => {
           if (!e.target.files[0]) return;
           const reader = new FileReader();
@@ -750,7 +760,6 @@
       });
       this.els.btnDelOverlay.addEventListener('click', () => self.deleteActiveOverlay());
 
-      // Mouse Logic
       this.canvas.addEventListener('mousedown', (e) => {
           const mouse = self.getMousePos(e);
           const sc = self.scenes[self.currentSceneIndex];
@@ -759,7 +768,8 @@
           } else {
              if (e.button === 0) {
                 self.isDragging = true; self.dragStart = mouse;
-                
+                self.showWrapGuide = true;
+
                 let hitBlock = null;
                 for (let i = sc.blocks.length - 1; i >= 0; i--) {
                     const b = sc.blocks[i];
@@ -801,9 +811,11 @@
                if (Math.abs(w) > 5 && Math.abs(h) > 5) {
                    self.scenes[self.currentSceneIndex].censoredAreas.push({ x: self.censorStart.x, y: self.censorStart.y, w: w, h: h });
                }
-               self.isCensoring = false; self.draw();
+               self.isCensoring = false; 
           }
           self.isDragging = false; self.dragTarget = null;
+          self.showWrapGuide = false;
+          self.draw();
       });
 
       this.canvas.addEventListener('mousemove', (e) => {
@@ -823,9 +835,39 @@
          } else {
             if (self.isDragging) {
                if (self.dragTarget === 'image') {
+                   // Background: Free move
                    sc.imgX += mouse.x - self.dragStart.x; sc.imgY += mouse.y - self.dragStart.y; self.dragStart = mouse;
                } else if (self.dragTarget) {
-                   self.dragTarget.x = mouse.x - self.dragOffset.x; self.dragTarget.y = mouse.y - self.dragOffset.y;
+                   // Items: Hard Constraint (Strictly Inside Canvas)
+                   const bounds = self.dragTarget.bounds || 
+                                  { x: self.dragTarget.x, y: self.dragTarget.y, w: self.dragTarget.w, h: self.dragTarget.h };
+
+                   // Calculate Offset (Because text blocks have padding)
+                   const offsetX = self.dragTarget.x - bounds.x;
+                   const offsetY = self.dragTarget.y - bounds.y;
+
+                   // Calculate Target Position for the BOUNDING BOX
+                   let targetBoundX = mouse.x - self.dragOffset.x - offsetX;
+                   let targetBoundY = mouse.y - self.dragOffset.y - offsetY;
+
+                   // 1. Min Constraint (Left/Top)
+                   if (targetBoundX < 0) targetBoundX = 0;
+                   if (targetBoundY < 0) targetBoundY = 0;
+
+                   // 2. Max Constraint (Right/Bottom)
+                   let maxX = self.canvas.width - bounds.w;
+                   let maxY = self.canvas.height - bounds.h;
+                   
+                   // Handle large objects: If object is bigger than canvas, prioritize Top/Left alignment (0)
+                   if (maxX < 0) maxX = 0;
+                   if (maxY < 0) maxY = 0;
+
+                   if (targetBoundX > maxX) targetBoundX = maxX;
+                   if (targetBoundY > maxY) targetBoundY = maxY;
+
+                   // Apply back to internal coords
+                   self.dragTarget.x = targetBoundX + offsetX;
+                   self.dragTarget.y = targetBoundY + offsetY;
                }
                self.draw();
             }
